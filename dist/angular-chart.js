@@ -43,7 +43,6 @@
     .directive('chartBase', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory(); }])
     .directive('chartLine', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('line'); }])
     .directive('chartBar', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('bar'); }])
-    .directive('chartHorizontalBar', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('horizontalBar'); }])
     .directive('chartRadar', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('radar'); }])
     .directive('chartDoughnut', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('doughnut'); }])
     .directive('chartPie', ['ChartJsFactory', function (ChartJsFactory) { return new ChartJsFactory('pie'); }])
@@ -101,7 +100,8 @@
           chartColors: '=?',
           chartClick: '=?',
           chartHover: '=?',
-          chartYAxes: '=?'
+          chartYAxes: '=?',
+          chartDatasets: '=?'
         },
         link: function (scope, elem/*, attrs */) {
           var chart;
@@ -161,9 +161,16 @@
             scope.chartGetColor = typeof scope.chartGetColor === 'function' ? scope.chartGetColor : getRandomColor;
             var colors = getColors(type, scope);
             var cvs = elem[0], ctx = cvs.getContext('2d');
-            var data = Array.isArray(scope.chartData[0]) ?
-              getDataSets(scope.chartLabels, scope.chartData, scope.chartSeries || [], colors, scope.chartYAxes) :
-              getData(scope.chartLabels, scope.chartData, colors);
+
+            var data;
+            if (scope.chartDatasets) {
+              data = getDataSetsFromDataSets(scope.chartLabels, scope.chartDatasets, colors);
+            }
+            else {
+              data = Array.isArray(scope.chartData[0]) ?
+                getDataSets(scope.chartLabels, scope.chartData, scope.chartSeries || [], colors, scope.chartYAxes) :
+                getData(scope.chartLabels, scope.chartData, colors);
+            }
 
             var options = angular.extend({}, ChartJs.getOptions(type), scope.chartOptions);
             // Destroy old chart if it exists to avoid ghost charts issue
@@ -285,6 +292,15 @@
             dataset.yAxisID = yaxis[i];
           }
           return dataset;
+        })
+      };
+    }
+
+    function getDataSetsFromDataSets (labels, datasets, colors) {
+      return {
+        labels: labels,
+        datasets: datasets.map(function (item, i) {
+          return angular.extend(item, colors[i]);
         })
       };
     }
